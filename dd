@@ -1,0 +1,1138 @@
+--==================================================
+-- ADMIN CLIENT PANEL
+-- FLY + NOCLIP + TELEPORT + FLY SPEED + CHARACTER SPEED
+--
+-- LocalScript ONLY
+-- StarterPlayer > StarterPlayerScripts
+--==================================================
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local flying = false
+local noclip = false
+
+local flySpeed = 50
+local characterSpeed = 16
+
+local character
+local humanoid
+local root
+
+local bodyVelocity
+local bodyGyro
+
+local flyConnection
+local noclipConnection
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local function getCharacter()
+
+	character = player.Character or player.CharacterAdded:Wait()
+
+	humanoid = character:WaitForChild("Humanoid")
+	root = character:WaitForChild("HumanoidRootPart")
+
+end
+
+getCharacter()
+
+--==================================================
+-- GUI
+--==================================================
+
+local gui = Instance.new("ScreenGui")
+
+gui.Name = "AdminClientGui"
+gui.ResetOnSpawn = false
+
+gui.Parent = player:WaitForChild("PlayerGui")
+
+--==================================================
+-- ADMIN BUTTON
+--==================================================
+
+local adminButton = Instance.new("TextButton")
+
+adminButton.Name = "AdminButton"
+
+adminButton.Size = UDim2.fromOffset(110, 45)
+adminButton.Position = UDim2.new(0, 15, 0.5, -22)
+
+adminButton.BackgroundColor3 =
+	Color3.fromRGB(30, 30, 30)
+
+adminButton.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+adminButton.Text = "ADMIN"
+
+adminButton.TextSize = 18
+adminButton.Font = Enum.Font.GothamBold
+
+adminButton.BorderSizePixel = 0
+
+adminButton.Parent = gui
+
+local adminCorner = Instance.new("UICorner")
+
+adminCorner.CornerRadius =
+	UDim.new(0, 8)
+
+adminCorner.Parent = adminButton
+
+--==================================================
+-- PANEL
+--==================================================
+
+local panel = Instance.new("Frame")
+
+panel.Name = "AdminPanel"
+
+-- LEBIH PENDEK
+panel.Size = UDim2.fromOffset(300, 330)
+
+panel.Position =
+	UDim2.fromScale(0.5, 0.5)
+
+panel.AnchorPoint =
+	Vector2.new(0.5, 0.5)
+
+panel.BackgroundColor3 =
+	Color3.fromRGB(35, 35, 35)
+
+panel.BorderSizePixel = 0
+
+panel.Visible = false
+
+panel.Parent = gui
+
+local panelCorner = Instance.new("UICorner")
+
+panelCorner.CornerRadius =
+	UDim.new(0, 12)
+
+panelCorner.Parent = panel
+
+--==================================================
+-- TITLE
+--==================================================
+
+local title = Instance.new("TextLabel")
+
+title.Size =
+	UDim2.new(1, 0, 0, 45)
+
+title.BackgroundTransparency = 1
+
+title.Text = "ADMIN PANEL"
+
+title.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+title.TextSize = 21
+title.Font = Enum.Font.GothamBold
+
+title.Parent = panel
+
+--==================================================
+-- SCROLL FRAME
+--==================================================
+
+local scroll = Instance.new("ScrollingFrame")
+
+scroll.Name = "Scroll"
+
+scroll.Size =
+	UDim2.new(1, -20, 1, -55)
+
+scroll.Position =
+	UDim2.fromOffset(10, 50)
+
+scroll.BackgroundTransparency = 1
+
+scroll.BorderSizePixel = 0
+
+scroll.ScrollBarThickness = 5
+
+scroll.ScrollBarImageColor3 =
+	Color3.fromRGB(120, 120, 120)
+
+scroll.CanvasSize =
+	UDim2.new(0, 0, 0, 430)
+
+scroll.Parent = panel
+
+--==================================================
+-- CONTENT
+--==================================================
+
+local content = Instance.new("Frame")
+
+content.Size =
+	UDim2.new(1, -10, 0, 430)
+
+content.BackgroundTransparency = 1
+
+content.Parent = scroll
+
+--==================================================
+-- HELPER
+--==================================================
+
+local function corner(object)
+
+	local c = Instance.new("UICorner")
+
+	c.CornerRadius =
+		UDim.new(0, 8)
+
+	c.Parent = object
+
+end
+
+--==================================================
+-- FLY TITLE
+--==================================================
+
+local flyTitle = Instance.new("TextLabel")
+
+flyTitle.Size =
+	UDim2.new(1, -20, 0, 25)
+
+flyTitle.Position =
+	UDim2.fromOffset(10, 5)
+
+flyTitle.BackgroundTransparency = 1
+
+flyTitle.Text = "MOVEMENT"
+
+flyTitle.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+flyTitle.TextSize = 17
+flyTitle.Font = Enum.Font.GothamBold
+
+flyTitle.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+flyTitle.Parent = content
+
+--==================================================
+-- FLY BUTTON
+--==================================================
+
+local flyButton = Instance.new("TextButton")
+
+flyButton.Size =
+	UDim2.new(1, -20, 0, 42)
+
+flyButton.Position =
+	UDim2.fromOffset(10, 35)
+
+flyButton.BackgroundColor3 =
+	Color3.fromRGB(180, 50, 50)
+
+flyButton.Text = "FLY: OFF"
+
+flyButton.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+flyButton.TextSize = 16
+flyButton.Font = Enum.Font.GothamBold
+
+flyButton.BorderSizePixel = 0
+
+flyButton.Parent = content
+
+corner(flyButton)
+
+--==================================================
+-- NOCLIP BUTTON
+--==================================================
+
+local noclipButton = Instance.new("TextButton")
+
+noclipButton.Size =
+	UDim2.new(1, -20, 0, 42)
+
+noclipButton.Position =
+	UDim2.fromOffset(10, 85)
+
+noclipButton.BackgroundColor3 =
+	Color3.fromRGB(180, 50, 50)
+
+noclipButton.Text = "NO CLIP: OFF"
+
+noclipButton.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+noclipButton.TextSize = 16
+noclipButton.Font = Enum.Font.GothamBold
+
+noclipButton.BorderSizePixel = 0
+
+noclipButton.Parent = content
+
+corner(noclipButton)
+
+--==================================================
+-- FLY SPEED LABEL
+--==================================================
+
+local flySpeedLabel = Instance.new("TextLabel")
+
+flySpeedLabel.Size =
+	UDim2.new(1, -20, 0, 22)
+
+flySpeedLabel.Position =
+	UDim2.fromOffset(10, 137)
+
+flySpeedLabel.BackgroundTransparency = 1
+
+flySpeedLabel.Text = "FLY SPEED"
+
+flySpeedLabel.TextColor3 =
+	Color3.fromRGB(210, 210, 210)
+
+flySpeedLabel.TextSize = 13
+flySpeedLabel.Font = Enum.Font.Gotham
+
+flySpeedLabel.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+flySpeedLabel.Parent = content
+
+--==================================================
+-- FLY SPEED BOX
+--==================================================
+
+local flySpeedBox = Instance.new("TextBox")
+
+flySpeedBox.Size =
+	UDim2.fromOffset(180, 38)
+
+flySpeedBox.Position =
+	UDim2.fromOffset(10, 162)
+
+flySpeedBox.BackgroundColor3 =
+	Color3.fromRGB(55, 55, 55)
+
+flySpeedBox.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+flySpeedBox.Text =
+	tostring(flySpeed)
+
+flySpeedBox.PlaceholderText =
+	"Fly Speed"
+
+flySpeedBox.TextSize = 15
+flySpeedBox.Font = Enum.Font.Gotham
+
+flySpeedBox.ClearTextOnFocus = false
+
+flySpeedBox.BorderSizePixel = 0
+
+flySpeedBox.Parent = content
+
+corner(flySpeedBox)
+
+--==================================================
+-- FLY SPEED OK
+--==================================================
+
+local flySpeedOK = Instance.new("TextButton")
+
+flySpeedOK.Size =
+	UDim2.fromOffset(70, 38)
+
+flySpeedOK.Position =
+	UDim2.fromOffset(200, 162)
+
+flySpeedOK.BackgroundColor3 =
+	Color3.fromRGB(40, 160, 75)
+
+flySpeedOK.Text = "OK"
+
+flySpeedOK.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+flySpeedOK.TextSize = 15
+flySpeedOK.Font = Enum.Font.GothamBold
+
+flySpeedOK.BorderSizePixel = 0
+
+flySpeedOK.Parent = content
+
+corner(flySpeedOK)
+
+--==================================================
+-- TELEPORT LABEL
+--==================================================
+
+local teleportLabel = Instance.new("TextLabel")
+
+teleportLabel.Size =
+	UDim2.new(1, -20, 0, 22)
+
+teleportLabel.Position =
+	UDim2.fromOffset(10, 210)
+
+teleportLabel.BackgroundTransparency = 1
+
+teleportLabel.Text =
+	"TELEPORT TO PLAYER"
+
+teleportLabel.TextColor3 =
+	Color3.fromRGB(210, 210, 210)
+
+teleportLabel.TextSize = 13
+teleportLabel.Font = Enum.Font.Gotham
+
+teleportLabel.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+teleportLabel.Parent = content
+
+--==================================================
+-- PLAYER BOX
+--==================================================
+
+local playerBox = Instance.new("TextBox")
+
+playerBox.Size =
+	UDim2.fromOffset(180, 38)
+
+playerBox.Position =
+	UDim2.fromOffset(10, 235)
+
+playerBox.BackgroundColor3 =
+	Color3.fromRGB(55, 55, 55)
+
+playerBox.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+playerBox.PlaceholderText =
+	"Username / DisplayName"
+
+playerBox.Text = ""
+
+playerBox.TextSize = 13
+playerBox.Font = Enum.Font.Gotham
+
+playerBox.ClearTextOnFocus = false
+
+playerBox.BorderSizePixel = 0
+
+playerBox.Parent = content
+
+corner(playerBox)
+
+--==================================================
+-- TELEPORT OK
+--==================================================
+
+local teleportButton = Instance.new("TextButton")
+
+teleportButton.Size =
+	UDim2.fromOffset(70, 38)
+
+teleportButton.Position =
+	UDim2.fromOffset(200, 235)
+
+teleportButton.BackgroundColor3 =
+	Color3.fromRGB(50, 120, 200)
+
+teleportButton.Text = "OK"
+
+teleportButton.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+teleportButton.TextSize = 15
+teleportButton.Font = Enum.Font.GothamBold
+
+teleportButton.BorderSizePixel = 0
+
+teleportButton.Parent = content
+
+corner(teleportButton)
+
+--==================================================
+-- CHARACTER SPEED
+--==================================================
+
+local characterSpeedLabel = Instance.new("TextLabel")
+
+characterSpeedLabel.Size =
+	UDim2.new(1, -20, 0, 22)
+
+characterSpeedLabel.Position =
+	UDim2.fromOffset(10, 283)
+
+characterSpeedLabel.BackgroundTransparency = 1
+
+characterSpeedLabel.Text =
+	"CHARACTER SPEED"
+
+characterSpeedLabel.TextColor3 =
+	Color3.fromRGB(210, 210, 210)
+
+characterSpeedLabel.TextSize = 13
+characterSpeedLabel.Font = Enum.Font.Gotham
+
+characterSpeedLabel.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+characterSpeedLabel.Parent = content
+
+--==================================================
+-- CHARACTER SPEED BOX
+--==================================================
+
+local characterSpeedBox = Instance.new("TextBox")
+
+characterSpeedBox.Size =
+	UDim2.fromOffset(180, 38)
+
+characterSpeedBox.Position =
+	UDim2.fromOffset(10, 308)
+
+characterSpeedBox.BackgroundColor3 =
+	Color3.fromRGB(55, 55, 55)
+
+characterSpeedBox.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+characterSpeedBox.Text =
+	tostring(characterSpeed)
+
+characterSpeedBox.PlaceholderText =
+	"Character Speed"
+
+characterSpeedBox.TextSize = 15
+characterSpeedBox.Font = Enum.Font.Gotham
+
+characterSpeedBox.ClearTextOnFocus = false
+
+characterSpeedBox.BorderSizePixel = 0
+
+characterSpeedBox.Parent = content
+
+corner(characterSpeedBox)
+
+--==================================================
+-- CHARACTER SPEED OK
+--==================================================
+
+local characterSpeedOK = Instance.new("TextButton")
+
+characterSpeedOK.Size =
+	UDim2.fromOffset(70, 38)
+
+characterSpeedOK.Position =
+	UDim2.fromOffset(200, 308)
+
+characterSpeedOK.BackgroundColor3 =
+	Color3.fromRGB(40, 160, 75)
+
+characterSpeedOK.Text = "OK"
+
+characterSpeedOK.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+characterSpeedOK.TextSize = 15
+characterSpeedOK.Font = Enum.Font.GothamBold
+
+characterSpeedOK.BorderSizePixel = 0
+
+characterSpeedOK.Parent = content
+
+corner(characterSpeedOK)
+
+--==================================================
+-- STATUS
+--==================================================
+
+local statusLabel = Instance.new("TextLabel")
+
+statusLabel.Size =
+	UDim2.new(1, -20, 0, 35)
+
+statusLabel.Position =
+	UDim2.fromOffset(10, 355)
+
+statusLabel.BackgroundTransparency = 1
+
+statusLabel.Text =
+	"Fly: 50 | Character: 16"
+
+statusLabel.TextColor3 =
+	Color3.fromRGB(160, 160, 160)
+
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.Gotham
+
+statusLabel.TextWrapped = true
+
+statusLabel.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+statusLabel.Parent = content
+
+--==================================================
+-- STOP FLY
+--==================================================
+
+local function stopFly()
+
+	flying = false
+
+	if flyConnection then
+		flyConnection:Disconnect()
+		flyConnection = nil
+	end
+
+	if bodyVelocity then
+		bodyVelocity:Destroy()
+		bodyVelocity = nil
+	end
+
+	if bodyGyro then
+		bodyGyro:Destroy()
+		bodyGyro = nil
+	end
+
+	if humanoid then
+
+		humanoid.PlatformStand = false
+		humanoid.AutoRotate = true
+
+	end
+
+	flyButton.Text = "FLY: OFF"
+
+	flyButton.BackgroundColor3 =
+		Color3.fromRGB(180, 50, 50)
+
+end
+
+--==================================================
+-- START FLY
+--==================================================
+
+local function startFly()
+
+	getCharacter()
+
+	if not root or not humanoid then
+		return
+	end
+
+	flying = true
+
+	flyButton.Text = "FLY: ON"
+
+	flyButton.BackgroundColor3 =
+		Color3.fromRGB(40, 170, 80)
+
+	humanoid.PlatformStand = true
+	humanoid.AutoRotate = false
+
+	--==================================================
+	-- BODY VELOCITY
+	--==================================================
+
+	bodyVelocity =
+		Instance.new("BodyVelocity")
+
+	bodyVelocity.Name =
+		"ClientFlyVelocity"
+
+	bodyVelocity.MaxForce =
+		Vector3.new(
+			math.huge,
+			math.huge,
+			math.huge
+		)
+
+	bodyVelocity.P = 10000
+
+	bodyVelocity.Velocity =
+		Vector3.zero
+
+	bodyVelocity.Parent =
+		root
+
+	--==================================================
+	-- BODY GYRO
+	--==================================================
+
+	bodyGyro =
+		Instance.new("BodyGyro")
+
+	bodyGyro.Name =
+		"ClientFlyGyro"
+
+	bodyGyro.MaxTorque =
+		Vector3.new(
+			math.huge,
+			math.huge,
+			math.huge
+		)
+
+	bodyGyro.P = 10000
+	bodyGyro.D = 500
+
+	bodyGyro.CFrame =
+		root.CFrame
+
+	bodyGyro.Parent =
+		root
+
+	--==================================================
+	-- FLY LOOP
+	--==================================================
+
+	flyConnection =
+		RunService.RenderStepped:Connect(
+			function()
+
+				if not flying then
+					return
+				end
+
+				if not character
+					or not character.Parent
+					or not root
+					or not root.Parent then
+
+					stopFly()
+					return
+
+				end
+
+				local camera =
+					workspace.CurrentCamera
+
+				-- Analog / WASD
+				local move =
+					humanoid.MoveDirection
+
+				-- Arah kamera 3D
+				local look =
+					camera.CFrame.LookVector
+
+				local right =
+					camera.CFrame.RightVector
+
+				-- Input mengikuti kamera
+				local forward =
+					move:Dot(look)
+
+				local sideways =
+					move:Dot(right)
+
+				local velocity =
+					(look * forward)
+					+
+					(right * sideways)
+
+				-- SPACE = naik
+				if UserInputService:IsKeyDown(
+					Enum.KeyCode.Space
+				) then
+
+					velocity +=
+						Vector3.new(0, 1, 0)
+
+				end
+
+				-- CTRL / SHIFT = turun
+				if UserInputService:IsKeyDown(
+					Enum.KeyCode.LeftControl
+				)
+				or UserInputService:IsKeyDown(
+					Enum.KeyCode.LeftShift
+				) then
+
+					velocity -=
+						Vector3.new(0, 1, 0)
+
+				end
+
+				if velocity.Magnitude > 1 then
+
+					velocity =
+						velocity.Unit
+
+				end
+
+				bodyVelocity.Velocity =
+					velocity * flySpeed
+
+				-- Karakter menghadap kamera
+				if look.Magnitude > 0 then
+
+					bodyGyro.CFrame =
+						CFrame.lookAt(
+							root.Position,
+							root.Position + look
+						)
+
+				end
+
+			end
+		)
+
+end
+
+--==================================================
+-- NOCLIP
+--==================================================
+
+local function setNoclip(state)
+
+	noclip = state
+
+	if noclipConnection then
+
+		noclipConnection:Disconnect()
+		noclipConnection = nil
+
+	end
+
+	if not noclip then
+
+		if character then
+
+			for _, object in ipairs(
+				character:GetDescendants()
+			) do
+
+				if object:IsA("BasePart") then
+
+					object.CanCollide = true
+
+				end
+
+			end
+
+		end
+
+		noclipButton.Text =
+			"NO CLIP: OFF"
+
+		noclipButton.BackgroundColor3 =
+			Color3.fromRGB(180, 50, 50)
+
+		return
+
+	end
+
+	noclipButton.Text =
+		"NO CLIP: ON"
+
+	noclipButton.BackgroundColor3 =
+		Color3.fromRGB(40, 170, 80)
+
+	noclipConnection =
+		RunService.Stepped:Connect(
+			function()
+
+				if not noclip then
+					return
+				end
+
+				if not character then
+					return
+				end
+
+				for _, object in ipairs(
+					character:GetDescendants()
+				) do
+
+					if object:IsA("BasePart") then
+
+						object.CanCollide = false
+
+					end
+
+				end
+
+			end
+		)
+
+end
+
+--==================================================
+-- FIND PLAYER
+--==================================================
+
+local function findPlayer(text)
+
+	if not text or text == "" then
+		return nil
+	end
+
+	text = string.lower(text)
+
+	-- Exact username
+	for _, target in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if string.lower(target.Name) == text then
+
+			return target
+
+		end
+
+	end
+
+	-- Exact display name
+	for _, target in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if string.lower(
+			target.DisplayName
+		) == text then
+
+			return target
+
+		end
+
+	end
+
+	-- Partial username
+	for _, target in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if string.sub(
+			string.lower(target.Name),
+			1,
+			#text
+		) == text then
+
+			return target
+
+		end
+
+	end
+
+	-- Partial display name
+	for _, target in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if string.sub(
+			string.lower(target.DisplayName),
+			1,
+			#text
+		) == text then
+
+			return target
+
+		end
+
+	end
+
+	return nil
+
+end
+
+--==================================================
+-- TELEPORT
+--==================================================
+
+local function teleportToPlayer()
+
+	local text =
+		playerBox.Text
+
+	if text == "" then
+
+		statusLabel.Text =
+			"Masukkan Username / DisplayName!"
+
+		return
+
+	end
+
+	local target =
+		findPlayer(text)
+
+	if not target then
+
+		statusLabel.Text =
+			"Player tidak ditemukan!"
+
+		return
+
+	end
+
+	if target == player then
+
+		statusLabel.Text =
+			"Tidak bisa teleport ke diri sendiri!"
+
+		return
+
+	end
+
+	local targetCharacter =
+		target.Character
+
+	if not targetCharacter then
+
+		statusLabel.Text =
+			"Character target belum siap!"
+
+		return
+
+	end
+
+	local targetRoot =
+		targetCharacter:FindFirstChild(
+			"HumanoidRootPart"
+		)
+
+	if not targetRoot then
+
+		statusLabel.Text =
+			"Target belum punya RootPart!"
+
+		return
+
+	end
+
+	getCharacter()
+
+	if not root then
+		return
+	end
+
+	root.CFrame =
+		targetRoot.CFrame *
+		CFrame.new(3, 0, 0)
+
+	statusLabel.Text =
+		"Teleport: " ..
+		target.DisplayName
+
+end
+
+--==================================================
+-- FLY SPEED
+--==================================================
+
+local function updateFlySpeed()
+
+	local value =
+		tonumber(flySpeedBox.Text)
+
+	if value then
+
+		flySpeed =
+			math.clamp(
+				value,
+				1,
+				1000
+			)
+
+	end
+
+	flySpeedBox.Text =
+		tostring(flySpeed)
+
+	statusLabel.Text =
+		"Fly: " ..
+		flySpeed ..
+		" | Character: " ..
+		characterSpeed
+
+end
+
+--==================================================
+-- CHARACTER SPEED
+--==================================================
+
+local function updateCharacterSpeed()
+
+	local value =
+		tonumber(characterSpeedBox.Text)
+
+	if value then
+
+		characterSpeed =
+			math.clamp(
+				value,
+				1,
+				500
+			)
+
+	end
+
+	characterSpeedBox.Text =
+		tostring(characterSpeed)
+
+	-- Terapkan langsung
+	if humanoid then
+
+		humanoid.WalkSpeed =
+			characterSpeed
+
+	end
+
+	statusLabel.Text =
+		"Fly: " ..
+		flySpeed ..
+		" | Character: " ..
+		characterSpeed
+
+end
+
+--==================================================
+-- BUTTON EVENTS
+--==================================================
+
+adminButton.MouseButton1Click:Connect(
+	function()
+
+		panel.Visible =
+			not panel.Visible
+
+	end
+)
+
+-- FLY
+flyButton.MouseButton1Click:Connect(
+	function()
+
+		if flying then
+
+			stopFly()
+
+		else
+
+			startFly()
+
+		end
+
+	end
+)
+
+-- NOCLIP
+noclipButton.MouseButton1Click.Connect
